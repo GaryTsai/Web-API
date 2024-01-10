@@ -6,10 +6,8 @@ import os
 from dotenv import load_dotenv
 from fastapi.middleware.cors import CORSMiddleware
 load_dotenv()
-import json
-import time
-import requests
-
+from datetime import datetime
+import pytz
 
 # 參考 twstock 取得需要的 URL
 SESSION_URL = 'http://mis.twse.com.tw/stock/index.jsp'
@@ -49,7 +47,6 @@ key = os.getenv("FAKE_VALUE")
 app = FastAPI()
 
 origins = [
-    "http://localhost:3001",
     "https://web-api-test.onrender.com"
 ]
 
@@ -70,12 +67,19 @@ def read_root():
 
 @app.post("/realtime_price/")
 async def stock_price(numberList: Stock):
+
+    tw = pytz.timezone('Asia/Taipei')
+    now_utc = datetime.now(tw)
+    date = datetime.now().date()
+    currentDateTime = datetime(now_utc.year, now_utc.month, now_utc.day, now_utc.hour, now_utc.minute)
+
+    stock_end_time = datetime(date.year, date.month, date.day, 13, 30)
     data = {}
     for stock_number in numberList.stock_list:
         if((stock_number in twstock.codes) == True):
-            data[stock_number] = twstock.realtime.get(stock_number)['realtime']['best_ask_price'][0]
-    return data
+            if(currentDateTime < stock_end_time):
+                data[stock_number] = twstock.realtime.get(stock_number)['realtime']['best_ask_price'][0]
+            else: 
+                data[stock_number] = twstock.realtime.get(stock_number)['realtime']['latest_trade_price']
 
-@app.get("/items/{item_id}")
-def read_item(item_id: int, q: Union[str, None] = None):
-    return {"item_id": item_id, "q": q}
+    return data
