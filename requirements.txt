@@ -3,3 +3,4 @@ uvicorn[standard]
 twstock
 lxml
 pytz
+BeautifulSoup4
