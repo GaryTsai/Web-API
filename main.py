@@ -10,7 +10,11 @@ from datetime import datetime
 import pytz
 import requests 
 from bs4 import BeautifulSoup
-
+import time
+from lxml import etree 
+from multiprocessing import Process, Pool
+import multiprocessing
+import asyncio
 # 參考 twstock 取得需要的 URL
 SESSION_URL = 'http://mis.twse.com.tw/stock/index.jsp'
 STOCKINFO_URL = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch={stock_id}&_={time}'
@@ -71,7 +75,6 @@ def read_root():
 
 @app.post("/realtime_price/")
 async def stock_price(numberList: Stock):
-
     # tw = pytz.timezone('Asia/Taipei')
     # now_utc = datetime.now(tw)
     # date = datetime.now().date()
@@ -85,13 +88,37 @@ async def stock_price(numberList: Stock):
     #             data[stock_number] = twstock.realtime.get(stock_number)['realtime']['best_ask_price'][0]
     #         else: 
     #             data[stock_number] = twstock.realtime.get(stock_number)['realtime']['latest_trade_price']
+    # ----------------------------------------------------------------------------------------------------
+    # data = {}
+    # print(numberList)
+    # for stock_number in numberList.stock_list:
+    #     url = "https://tw.stock.yahoo.com/quote/{}.TW".format(stock_number)
+    #     res = requests.get(url) 
+    #     Soup = BeautifulSoup(res.text,'html.parser')
+    #     soup = Soup.find("span", string="成交") 
+    #     price = soup.find_next_siblings("span")
+    #     data[stock_number] = price[0].get_text().strip()
+    # -----------------------------------------------------------------------------------------------------
+
     data = {}
-    print(numberList)
-    for stock_number in numberList.stock_list:
+    price_offset = {}
+    def crawl(stock_number):
         url = "https://tw.stock.yahoo.com/quote/{}.TW".format(stock_number)
-        res = requests.get(url) 
-        Soup = BeautifulSoup(res.text,'html.parser')
-        soup = Soup.find("span", string="成交") 
+        res = requests.get(url)
+        Soup = BeautifulSoup(res.text, 'lxml')
+        soup = Soup.find("span", string="成交")
         price = soup.find_next_siblings("span")
+        soup = Soup.find("span", string="昨收")
+        pre_offset = soup.find_next_siblings("span")
+
         data[stock_number] = price[0].get_text().strip()
-    return data
+        price_offset[stock_number] = round( float(price[0].get_text().strip()) - float(pre_offset[0].get_text().strip()), 2)
+        
+
+    loop = asyncio.get_event_loop()
+    start = time.time()
+    for stock_number in numberList.stock_list:
+       await loop.run_in_executor(None, crawl, stock_number)
+    end = time.time()
+    print('time',end - start)
+    return [data, price_offset]
