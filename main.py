@@ -55,7 +55,8 @@ app = FastAPI()
 origins = [
     "http://localhost:3001", # test url
     "http://localhost:3000", # test url
-    "https://web-api-test.onrender.com"
+    "https://web-api-test.onrender.com",
+    "https://garytsai.github.io"
 ]
 
 app.add_middleware(
