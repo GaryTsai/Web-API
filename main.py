@@ -15,6 +15,7 @@ from lxml import etree
 from multiprocessing import Process, Pool
 import multiprocessing
 import asyncio
+import pprint
 # 參考 twstock 取得需要的 URL
 SESSION_URL = 'http://mis.twse.com.tw/stock/index.jsp'
 STOCKINFO_URL = 'http://mis.twse.com.tw/stock/api/getStockInfo.jsp?ex_ch={stock_id}&_={time}'
@@ -123,3 +124,58 @@ async def stock_price(numberList: Stock):
     end = time.time()
     print('time',end - start)
     return [data, price_offset]
+
+@app.post("/dividend/")
+async def read_dividend(numberList: Stock):
+    webHtml = []
+    data = []
+    sockInfos = []
+    final_sockInfos = []
+    perSockInfo = {}
+
+    def crawl(stock_number):
+        data.clear()
+        webHtml.clear()
+        perSockInfo.clear()
+        url = "https://www.cmoney.tw/forum/stock/{}?s=dividend".format(stock_number)
+        res = requests.get(url)
+        Soup = BeautifulSoup(res.text, 'lxml')
+        for item in Soup.find_all("tr"):
+            webHtml.append(item.text)
+        for item in webHtml[2].split():
+            if webHtml[2].split().index(item) < 4:
+                data.append(item)
+        # 00929 月配        
+        if stock_number == '00929':
+            for item in webHtml[3].split():
+                if webHtml[3].split().index(item) < 3:
+                    data.append(item)
+        perSockInfo['stock_number'] = stock_number       
+        perSockInfo['timePeriod'] = data[0]
+        perSockInfo['dividend'] = data[1]
+        perSockInfo['ex-dividend-date'] = data[2]
+        perSockInfo['distributeDividend-date'] = data[3]
+        if stock_number == '00929':
+            perSockInfo['dividend_second'] = data[4]
+            perSockInfo['ex-dividend-date_second'] = data[5]
+            perSockInfo['distributeDividend-date_second'] = data[6]
+        temp = perSockInfo.copy()
+        sockInfos.append(temp)
+    # test stock list
+    # numberList = {
+    #     "stock_list":["00929", "3260", "2303", "9958", "00919", "8299", "6147", "4549", "3034", "3231", "00878", "2337", "3481", "00927", "1101","0056"]
+    #     }
+    loop = asyncio.get_event_loop()
+    start = time.time()
+    for stock_number in numberList["stock_list"]:
+       await loop.run_in_executor(None, crawl, stock_number)
+    end = time.time()
+    print('time',end - start)
+    for stock in sockInfos: 
+        if datetime.today().strftime("%Y") in stock['timePeriod']:
+            if datetime.today().strftime("%Y/%m") in stock['distributeDividend-date']:
+                final_sockInfos.append(stock)
+            if stock['stock_number'] == '00929' and datetime.today().strftime("%Y/%m") in stock['distributeDividend-date_second']:
+                final_sockInfos.append(stock)
+
+    return [ final_sockInfos ]
