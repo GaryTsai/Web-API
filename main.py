@@ -167,7 +167,7 @@ async def read_dividend(numberList: Stock):
     #     }
     loop = asyncio.get_event_loop()
     start = time.time()
-    for stock_number in numberList["stock_list"]:
+    for stock_number in numberList.stock_list:
        await loop.run_in_executor(None, crawl, stock_number)
     end = time.time()
     print('time',end - start)
