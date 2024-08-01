@@ -137,28 +137,43 @@ async def read_dividend(numberList: Stock):
         data.clear()
         webHtml.clear()
         perSockInfo.clear()
+
         url = "https://www.cmoney.tw/forum/stock/{}?s=dividend".format(stock_number)
         res = requests.get(url)
         Soup = BeautifulSoup(res.text, 'lxml')
         for item in Soup.find_all("tr"):
             webHtml.append(item.text)
+
         for item in webHtml[2].split():
-            if webHtml[2].split().index(item) < 4:
+            if webHtml[2].split().index(item) < 6:
                 data.append(item)
         # 00929 月配        
-        if stock_number == '00929':
+        if '00929' in stock_number:
             for item in webHtml[3].split():
-                if webHtml[3].split().index(item) < 3:
+                if webHtml[3].split().index(item) < 5:
                     data.append(item)
-        perSockInfo['stock_number'] = stock_number       
-        perSockInfo['timePeriod'] = data[0]
-        perSockInfo['dividend'] = data[1]
-        perSockInfo['ex-dividend-date'] = data[2]
-        perSockInfo['distributeDividend-date'] = data[3]
-        if stock_number == '00929':
-            perSockInfo['dividend_second'] = data[4]
-            perSockInfo['ex-dividend-date_second'] = data[5]
-            perSockInfo['distributeDividend-date_second'] = data[6]
+        if '00929' in stock_number:
+            perSockInfo['stock_number'] = stock_number       
+            perSockInfo['timePeriod'] = data[0]
+            perSockInfo['dividend'] = data[2]
+            perSockInfo['ex-dividend-date'] = data[3]
+            perSockInfo['distributeDividend-date'] = data[4]
+            perSockInfo['dividend_second'] = data[8]
+            perSockInfo['ex-dividend-date_second'] = data[9]
+            perSockInfo['distributeDividend-date_second'] = data[10]
+        if '00' in stock_number:
+            perSockInfo['stock_number'] = stock_number       
+            perSockInfo['timePeriod'] = data[0]
+            perSockInfo['dividend'] = data[2]
+            perSockInfo['ex-dividend-date'] = data[3]
+            perSockInfo['distributeDividend-date'] = data[4]
+        else :
+            perSockInfo['stock_number'] = stock_number       
+            perSockInfo['timePeriod'] = data[0]
+            perSockInfo['dividend'] = data[1]
+            perSockInfo['ex-dividend-date'] = data[2]
+            perSockInfo['distributeDividend-date'] = data[3]
+
         temp = perSockInfo.copy()
         sockInfos.append(temp)
     # test stock list
@@ -171,11 +186,12 @@ async def read_dividend(numberList: Stock):
        await loop.run_in_executor(None, crawl, stock_number)
     end = time.time()
     print('time',end - start)
+    print(str(datetime.now().year - 1))
     for stock in sockInfos: 
-        if datetime.today().strftime("%Y") in stock['timePeriod']:
+        if datetime.today().strftime("%Y") in stock['timePeriod'] or (str(datetime.now().year - 1)) in stock['timePeriod']:
             if datetime.today().strftime("%Y/%m") in stock['distributeDividend-date']:
                 final_sockInfos.append(stock)
-            if stock['stock_number'] == '00929' and datetime.today().strftime("%Y/%m") in stock['distributeDividend-date_second']:
+            if '00929' in stock['stock_number'] and datetime.today().strftime("%Y/%m") in stock['distributeDividend-date_second']:
                 final_sockInfos.append(stock)
 
-    return [ final_sockInfos ]
+    return sockInfos
