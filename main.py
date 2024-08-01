@@ -194,4 +194,4 @@ async def read_dividend(numberList: Stock):
             if '00929' in stock['stock_number'] and datetime.today().strftime("%Y/%m") in stock['distributeDividend-date_second']:
                 final_sockInfos.append(stock)
 
-    return sockInfos
+    return [ final_sockInfos ]
