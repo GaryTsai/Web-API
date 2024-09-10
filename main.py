@@ -153,14 +153,16 @@ async def read_dividend(numberList: Stock):
                 if webHtml[3].split().index(item) < 5:
                     data.append(item)
         if '00929' in stock_number:
+            print(data)
             perSockInfo['stock_number'] = stock_number       
             perSockInfo['timePeriod'] = data[0]
             perSockInfo['dividend'] = data[2]
             perSockInfo['ex-dividend-date'] = data[3]
             perSockInfo['distributeDividend-date'] = data[4]
-            perSockInfo['dividend_second'] = data[8]
-            perSockInfo['ex-dividend-date_second'] = data[9]
-            perSockInfo['distributeDividend-date_second'] = data[10]
+            perSockInfo['dividend_second'] = data[10]
+            perSockInfo['ex-dividend-date_second'] = data[11]
+            perSockInfo['distributeDividend-date_second'] = data[12]
+            print(perSockInfo)
         if '00' in stock_number:
             perSockInfo['stock_number'] = stock_number       
             perSockInfo['timePeriod'] = data[0]
