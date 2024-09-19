@@ -159,9 +159,9 @@ async def read_dividend(numberList: Stock):
             perSockInfo['dividend'] = data[2]
             perSockInfo['ex-dividend-date'] = data[3]
             perSockInfo['distributeDividend-date'] = data[4]
-            perSockInfo['dividend_second'] = data[10]
-            perSockInfo['ex-dividend-date_second'] = data[11]
-            perSockInfo['distributeDividend-date_second'] = data[12]
+            perSockInfo['dividend_second'] = data[8]
+            perSockInfo['ex-dividend-date_second'] = data[9]
+            perSockInfo['distributeDividend-date_second'] = data[10]
             print(perSockInfo)
         if '00' in stock_number:
             perSockInfo['stock_number'] = stock_number       
